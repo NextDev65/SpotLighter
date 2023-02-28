@@ -8,8 +8,9 @@ for /f  "usebackq delims=;" %%A in (`dir /b *.*`) do If %%~zA LSS 150000 del "%%
 ren *.* *.jpg
 cd ..
 
-MOVE "SpotLight_temp\*" "SpotLight"
-::Xcopy "SpotLight" "SpotLight" /q /i /s /e /k /r /y /b /d
+::Xcopy "SpotLight_temp" "SpotLight" /q /i /s /e /k /r /y /b /d
+IF NOT EXIST "SpotLight\" (mkdir "SpotLight")
+MOVE /Y "SpotLight_temp\*" "SpotLight"
 RMDIR /s /q ""SpotLight_temp\"
 
 EXIT /b
