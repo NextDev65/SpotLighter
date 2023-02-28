@@ -18,8 +18,7 @@ def pic_copy(source, desc, orientation):
         os.system(f'echo F|Xcopy /m "{source}" "{dest}"')
     else:
         if re.match(r'^.*\((\d+)\)\.jpg', dest):
-            desc_i = re.sub(r'(\()(\d+)(\))', lambda d: d.group(1) + str(int(d.group(2)) + 1) + d.group(3), desc,
-                            count=1)
+            desc_i = re.sub(r'(\()(\d+)(\))', lambda d: d.group(1) + str(int(d.group(2)) + 1) + d.group(3), desc, count=1)
         else:
             desc_i = desc + ' (1)'
         pic_copy(source, desc_i, orientation)

@@ -8,8 +8,8 @@ for /f  "usebackq delims=;" %%A in (`dir /b *.*`) do If %%~zA LSS 150000 del "%%
 ren *.* *.jpg
 cd ..
 
-MOVE "SpotLight\*" "SB"
-::Xcopy "SpotLight" "SB" /q /i /s /e /k /r /y /b /d
-RMDIR /s /q "SpotLight\"
+MOVE "SpotLight_temp\*" "SpotLight"
+::Xcopy "SpotLight" "SpotLight" /q /i /s /e /k /r /y /b /d
+RMDIR /s /q ""SpotLight_temp\"
 
 EXIT /b
