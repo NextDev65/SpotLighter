@@ -14,13 +14,16 @@ def pic_copy(source, desc, orientation):
     else:
         dest = f'SpotLight Portrait\\{desc}.jpg'
     
+    # DEBUG
     #print(source, dest)
-    # pws get attr
+    # powershell get attr
     #[System.IO.File]::GetAttributes("{source}")
     #(Get-Item "{source}").Attributes
-    # py check attr #import stat # file attributes
+    # py check attr
+    #import stat # file attributes
     #attr == (attr |  stat.FILE_ATTRIBUTE_) # if attr
     #attr == (attr & ~stat.FILE_ATTRIBUTE_) # if not attr
+    
     attr = os.stat(source).st_file_attributes
     # if file attributes do not include I
     if (attr == attr & ~I):
