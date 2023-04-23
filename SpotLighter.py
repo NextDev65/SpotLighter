@@ -1,60 +1,70 @@
-# %LocalAppData%\Packages\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\LocalState\TargetedContentCache\v3\338387\
-# py.exe -c "import sys, json; print(json.dumps(json.load(sys.stdin), indent=4))"
-# py.exe -c "import sys, json; print(json.load(sys.stdin)['properties']['landscapeImage']['image'])"
-# py.exe -c "import sys, json; print(json.load(sys.stdin)['items'][0]['properties']['description']['text'])"
-import os   # cmd commands
-import json # json parsing
-import re   # regex
+import os       # cmd commands
+import json     # json parsing
+import re       # regex
+import hashlib  # file hashing
+import base64   # hash decoding
 
-from stat import FILE_ATTRIBUTE_NOT_CONTENT_INDEXED as I
-
-def pic_copy(source, desc, orientation):
-    if orientation == 'landscape':
-        dest = f'SpotLight\\{desc}.jpg'
-    else:
-        dest = f'SpotLight Portrait\\{desc}.jpg'
-    
-    # DEBUG
-    #print(source, dest)
-    # powershell get attr
-    #[System.IO.File]::GetAttributes("{source}")
-    #(Get-Item "{source}").Attributes
-    # py check attr
-    #import stat # file attributes
-    #attr == (attr |  stat.FILE_ATTRIBUTE_) # if attr
-    #attr == (attr & ~stat.FILE_ATTRIBUTE_) # if not attr
-    
-    attr = os.stat(source).st_file_attributes
-    # if file attributes do not include I
-    if (attr == attr & ~I):
-        # if destination file does not already exist, copy and set I
-        if not os.path.exists(dest):
-            os.system(f'echo F|Xcopy /m "{source}" "{dest}"')
-            os.system(f'attrib +I "{source}"')
-        # if destination file already exists, enumerate description and recursively call pic_copy
-        else:
-            if re.match(r'^.*\((\d+)\)\.jpg', dest):
-                desc_i = re.sub(r'(\()(\d+)(\))', lambda d: d.group(1) + str(int(d.group(2)) + 1) + d.group(3), desc, count=1)
-            else:
-                desc_i = desc + ' (1)'
-            pic_copy(source, desc_i, orientation)
-
-
+# DEBUG? 1.
+DEBUG = 0
 # metadata directory
 metadata_dir = os.path.join(os.getenv('LocalAppData'), 'Packages\\Microsoft.Windows'
                                                        '.ContentDeliveryManager_cw5n1h2txyewy\\LocalState'
                                                        '\\TargetedContentCache\\v3\\338387\\')
 
-# iterate over metadata files
-for fname in os.listdir(metadata_dir):
-    with open(os.path.join(metadata_dir, fname), encoding='utf-8') as fstream: metadata = json.load(fstream)
-    landscapeImage = metadata['properties']['landscapeImage']['image']
-    portraitImage = metadata['properties']['portraitImage']['image']
-    description = metadata['items'][0]['properties']['description']['text'].strip()
 
-    # os.system(f'copy "{landscapeImage}" "SpotLight\\{description}.jpg"')
-    # subprocess.call(f'copy "{landscapeImage}" "SpotLight\\{description}.jpg"', shell=True)
-    # shutil.copy2(landscapeImage, f"SpotLight\\{description}.jpg")
+def pic_copy(src, title, orientation, src_hash):
+    if orientation == 'landscape':
+        dest = f'SpotLight\\{title}.jpg'
+    else:
+        dest = f'SpotLight Portrait\\{title}.jpg'
 
-    pic_copy(landscapeImage, description, 'landscape')
-    pic_copy(portraitImage, description, 'portrait')
+    if DEBUG:
+        print(src, dest)
+
+    # if destination file does not already exist, copy
+    if not os.path.exists(dest):
+        os.system(f'echo F|Xcopy /m "{src}" "{dest}"')
+        # subprocess.call(f'copy "{src}" "{dest}"', shell=True)
+        # shutil.copy2(src, dest)
+    # else destination file already exists and is not duplicate, enumerate title and recursively call pic_copy
+    else:
+        '''
+        # duplicate check via hex sha256 hash
+        src_hash = base64.b64decode(src_hash).hex()
+        with open(dest, 'rb') as fstream:
+            dest_hash = hashlib.sha256(fstream.read()).hexdigest()
+        '''
+        # duplicate check via b64 encoded sha256 hash
+        # src_hash = src_hash
+        with open(dest, 'rb') as fstream:
+            dest_hash = base64.b64encode(hashlib.sha256(fstream.read()).digest()).decode('utf-8')
+        if src_hash != dest_hash:
+            if re.match(r'^.*\((\d+)\)\.jpg', dest):
+                title_i = re.sub(r'(\()(\d+)(\))',
+                                 lambda d: d.group(1) + str(int(d.group(2)) + 1) + d.group(3),
+                                 title, count=1)
+            else:
+                title_i = title + ' (1)'
+            pic_copy(src, title_i, orientation, src_hash)
+        else:
+            if DEBUG:
+                print("Skipped!")
+
+
+def main():
+    # iterate over metadata files
+    for fname in os.listdir(metadata_dir):
+        with open(os.path.join(metadata_dir, fname), 'r', encoding='utf-8') as fstream:
+            metadata = json.load(fstream)
+        landscape_path = metadata['properties']['landscapeImage']['image']
+        portrait_path = metadata['properties']['portraitImage']['image']
+        description = metadata['items'][0]['properties']['description']['text'].strip()
+        landscape_hash = metadata['properties']['landscapeImage']['sha256']
+        portrait_hash = metadata['properties']['portraitImage']['sha256']
+
+        pic_copy(landscape_path, description, 'landscape', landscape_hash)
+        pic_copy(portrait_path, description, 'portrait', portrait_hash)
+
+
+if __name__ == '__main__':
+    main()
