@@ -3,6 +3,7 @@ import json     # json parsing
 import re       # regex
 import hashlib  # file hashing
 import base64   # hash decoding
+import shutil
 
 # DEBUG? 1.
 DEBUG = 0
@@ -23,9 +24,9 @@ def pic_copy(src, title, orientation, src_hash):
 
     # if destination file does not already exist, copy
     if not os.path.exists(dest):
-        os.system(f'echo F|Xcopy /m "{src}" "{dest}"')
+        # os.system(f'echo F|Xcopy /m "{src}" "{dest}"')
         # subprocess.call(f'copy "{src}" "{dest}"', shell=True)
-        # shutil.copy2(src, dest)
+        shutil.copy2(src, dest)
     # else destination file already exists and is not duplicate, enumerate title and recursively call pic_copy
     else:
         '''
@@ -51,7 +52,15 @@ def pic_copy(src, title, orientation, src_hash):
                 print("Skipped!")
 
 
+def mkdir(path='.'):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def main():
+    # make dir 'SpotLight' and 'SpotLight Portrait'
+    mkdir('SpotLight')
+    mkdir('SpotLight Portrait')
     # iterate over metadata files
     for fname in os.listdir(metadata_dir):
         with open(os.path.join(metadata_dir, fname), 'r', encoding='utf-8') as fstream:
